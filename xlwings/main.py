@@ -1448,6 +1448,18 @@ class Sheet:
         """
         return Range(impl=self.impl.cells)
 
+    @property
+    def used_range(self):
+        """
+        TODO: Document
+
+        Returns
+        -------
+        Range object
+        """
+
+        return Range(impl=self.impl.used_range)
+
     def activate(self):
         """Activates the Sheet and returns it."""
         self.book.activate()

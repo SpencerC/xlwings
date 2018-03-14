@@ -724,6 +724,10 @@ class Sheet(base_classes.Sheet):
             (1, 1), (self.xl.count(each=kw.row), self.xl.count(each=kw.column))
         )
 
+    @property
+    def used_range(self):
+        return Range(self, self.xl.used_range.get_address())
+
     def activate(self):
         self.xl.activate_object()
 
