@@ -1511,6 +1511,22 @@ class Sheet:
         """
         return self.impl.autofit(axis)
 
+    def unhide(self):
+        """
+        Unhides the Sheet.
+
+        .. versionadded:
+        """
+        return self.impl.unhide()
+
+    def hide(self):
+        """
+        Hides the Sheet.
+
+        .. versionadded:
+        """
+        return self.impl.hide()
+
     def delete(self):
         """
         Deletes the Sheet.
