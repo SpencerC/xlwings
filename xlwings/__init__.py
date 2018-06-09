@@ -2,7 +2,24 @@ import os
 import sys
 from functools import wraps
 
-__version__ = "dev"
+__version__ = 'dev'
+
+# Python 2 vs 3
+PY3 = sys.version_info[0] == 3
+
+enable_caching = True
+cache_timeout = 5
+
+if PY3:
+    string_types = str
+    xrange = range
+    from builtins import map
+    import builtins
+else:
+    string_types = basestring
+    xrange = xrange
+    from future_builtins import map
+    builtins = __builtins__
 
 # Platform specifics
 if sys.platform.startswith("darwin"):
