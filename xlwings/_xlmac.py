@@ -29,6 +29,8 @@ from .utils import (
 
 from openpyxl.utils.cell import range_boundaries, get_column_letter
 
+from openpyxl.utils.cell import range_boundaries, get_column_letter
+
 try:
     import pandas as pd
 except ImportError:
@@ -730,6 +732,10 @@ class Sheet(base_classes.Sheet):
     def used_range(self):
         return Range(self, self.xl.used_range.get_address())
 
+    @property
+    def used_range(self):
+        return Range(self, self.xl.used_range.get_address())
+
     def activate(self):
         self.xl.activate_object()
 
@@ -1109,6 +1115,7 @@ class Range(base_classes.Range):
                     kw.screen_tip: screen_tip,
                 },
             )
+
     @property
     def font(self):
         if not self.xl:
