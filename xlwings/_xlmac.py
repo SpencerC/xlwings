@@ -840,7 +840,12 @@ class Range(base_classes.Range):
         else:
             self.xl = sheet.xl.cells[address]
             bounds = range_boundaries(address)
-            self._coords = (bounds[1], bounds[0], bounds[3] - bounds[1] + 1, bounds[2] - bounds[0] + 1)
+            self._coords = (
+                bounds[1],
+                bounds[0],
+                bounds[3] - bounds[1] + 1,
+                bounds[2] - bounds[0] + 1,
+            )
 
     @property
     def coords(self):
@@ -1163,14 +1168,20 @@ class Range(base_classes.Range):
         if not self.xl:
             return None
         else:
-            properties = self.xl.get_border(which_border=appscript.Keyword(target)).properties.get()
+            properties = self.xl.get_border(
+                which_border=appscript.Keyword(target)
+            ).properties.get()
             return dict((k.name, v) for (k, v) in properties.items())
 
     def _border_apply_properties(self, target, properties):
         if self.xl is not None:
-            keywords = dict((appscript.Keyword(k), appscript.Keyword(v) if type(v) is str else v)
-                            for (k, v) in properties.items())
-            self.xl.get_border(which_border=appscript.Keyword(target)).properties.set(keywords, waitreply=False)
+            keywords = dict(
+                (appscript.Keyword(k), appscript.Keyword(v) if type(v) is str else v)
+                for (k, v) in properties.items()
+            )
+            self.xl.get_border(which_border=appscript.Keyword(target)).properties.set(
+                keywords, waitreply=False
+            )
 
     @property
     def border_top(self):
@@ -1210,7 +1221,7 @@ class Range(base_classes.Range):
             "top": self.border_top,
             "right": self.border_right,
             "bottom": self.border_bottom,
-            "left": self.border_left
+            "left": self.border_left,
         }
 
     @borders.setter
@@ -1234,10 +1245,7 @@ class Range(base_classes.Range):
 
     @property
     def borders_vertical(self):
-        return {
-            "right": self.border_right,
-            "left": self.border_left
-        }
+        return {"right": self.border_right, "left": self.border_left}
 
     @borders_vertical.setter
     def borders_vertical(self, properties):

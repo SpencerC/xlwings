@@ -2,7 +2,7 @@ import os
 import sys
 from functools import wraps
 
-__version__ = 'dev'
+__version__ = "dev"
 
 # Python 2 vs 3
 PY3 = sys.version_info[0] == 3
@@ -19,6 +19,7 @@ else:
     string_types = basestring
     xrange = xrange
     from future_builtins import map
+
     builtins = __builtins__
 
 # Platform specifics

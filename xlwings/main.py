@@ -16,7 +16,14 @@ import warnings
 from contextlib import contextmanager
 from pathlib import Path
 
-from . import xlplatform, string_types, ShapeAlreadyExists, PY3, enable_caching, cache_timeout
+from . import (
+    xlplatform,
+    string_types,
+    ShapeAlreadyExists,
+    PY3,
+    enable_caching,
+    cache_timeout,
+)
 
 from .utils import VersionNumber
 import xlwings
@@ -41,6 +48,7 @@ try:
     import PIL
 except ImportError:
     PIL = None
+
 
 class Collection:
     def __init__(self, impl):
@@ -1390,7 +1398,6 @@ class Sheet:
         """Gets or sets the name of the Sheet."""
         return self.get_name
 
-
     @name.setter
     def name(self, value):
         if value in [None, ""]:
@@ -2349,7 +2356,6 @@ class Range:
         """
         return self.impl.font
 
-
     @font.setter
     def font(self, properties):
         self.impl.font = properties
@@ -2420,7 +2426,6 @@ class Range:
     def borders_horizontal(self):
         return self.impl.borders_horizontal
 
-
     @borders_horizontal.setter
     def borders_horizontal(self, properties):
         self.impl.borders_horizontal = properties
@@ -2487,7 +2492,6 @@ class Range:
     @property
     def borders_horizontal(self):
         return self.impl.borders_horizontal
-
 
     @borders_horizontal.setter
     def borders_horizontal(self, properties):
@@ -2858,8 +2862,10 @@ class Range:
             assert column_size > 0
         else:
             column_size = self.shape[1]
-        return self.sheet.range((self.row, self.column),
-                                (self.row + row_size - 1, self.column + column_size - 1)).options(**self._options)
+        return self.sheet.range(
+            (self.row, self.column),
+            (self.row + row_size - 1, self.column + column_size - 1),
+        ).options(**self._options)
 
     def offset(self, row_offset=0, column_offset=0):
         """
@@ -2873,9 +2879,13 @@ class Range:
 
         .. versionadded:: 0.3.0
         """
-        return self.sheet.range((self.row + row_offset, self.column + column_offset),
-                                (self.row + row_offset + self.shape[0] - 1,
-                                 self.column + column_offset + self.shape[1] - 1)).options(**self._options)
+        return self.sheet.range(
+            (self.row + row_offset, self.column + column_offset),
+            (
+                self.row + row_offset + self.shape[0] - 1,
+                self.column + column_offset + self.shape[1] - 1,
+            ),
+        ).options(**self._options)
 
     @property
     def last_cell(self):
