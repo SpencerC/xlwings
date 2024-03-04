@@ -4,24 +4,6 @@ from functools import wraps
 
 __version__ = "dev"
 
-# Python 2 vs 3
-PY3 = sys.version_info[0] == 3
-
-enable_caching = True
-cache_timeout = 5
-
-if PY3:
-    string_types = str
-    xrange = range
-    from builtins import map
-    import builtins
-else:
-    string_types = basestring
-    xrange = xrange
-    from future_builtins import map
-
-    builtins = __builtins__
-
 # Platform specifics
 if sys.platform.startswith("darwin"):
     USER_CONFIG_FILE = os.path.join(
@@ -153,8 +135,8 @@ if sys.platform.startswith("win") and has_pywin32:
     # generated via makepy.py -i, but using an old minor=2, as it still seems to
     # generate the most recent version of it whereas it would fail if the minor is
     # higher than what exists on the machine. Allowing it to fail silently, as this is
-    # only a hard requirement for ComRange in udf.py which is only used for async and
-    # legacy dynamic arrays.
+    # only a hard requirement for ComRange in udf.py which is only used for async funcs,
+    # legacy dynamic arrays, and the 'caller' argument.
     try:
         from win32com.client import gencache
 
