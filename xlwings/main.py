@@ -18,7 +18,7 @@ from pathlib import Path
 
 import xlwings
 
-from . import LicenseError, ShapeAlreadyExists, XlwingsError, utils
+from . import LicenseError, ShapeAlreadyExists, XlwingsError, utils #, enable_caching, cache_timeout
 
 # Optional imports
 try:
@@ -38,6 +38,7 @@ try:
 except ImportError:
     PIL = None
 
+from cached_property import cached_property_with_ttl
 
 class Collection:
     def __init__(self, impl):
