@@ -13,6 +13,7 @@ import osax
 import psutil
 from appscript import its, k as kw, mactypes
 from appscript.reference import CommandError
+from openpyxl.utils.cell import range_boundaries, get_column_letter
 
 import xlwings
 
@@ -654,7 +655,7 @@ class Sheet(base_classes.Sheet):
 
     @name.setter
     def name(self, value):
-        self.xl.name.set(value)
+        self.xl.name.set(value, waitreply=False)
         self.xl = self.workbook.xl.worksheets[value]
 
     @property
@@ -679,7 +680,8 @@ class Sheet(base_classes.Sheet):
                     )
                 row1 = arg1[0]
                 col1 = arg1[1]
-                address1 = self.xl.rows[row1].columns[col1].get_address()
+                # HF address1 = self.xl.rows[row1].columns[col1].get_address()
+                address1 = "{}{}".format(get_column_letter(col1), row1)
             elif len(arg1) == 4:
                 return Range(self, arg1)
             else:
@@ -687,7 +689,8 @@ class Sheet(base_classes.Sheet):
         elif isinstance(arg1, Range):
             row1 = min(arg1.row, arg2.row)
             col1 = min(arg1.column, arg2.column)
-            address1 = self.xl.rows[row1].columns[col1].get_address()
+            # HF address1 = self.xl.rows[row1].columns[col1].get_address()
+            address1 = "{}{}".format(get_column_letter(col1), row1)
         elif isinstance(arg1, str):
             address1 = arg1.split(":")[0]
         else:
@@ -701,11 +704,13 @@ class Sheet(base_classes.Sheet):
                 )
             row2 = arg2[0]
             col2 = arg2[1]
-            address2 = self.xl.rows[row2].columns[col2].get_address()
+            # HF address2 = self.xl.rows[row2].columns[col2].get_address()
+            address2 = "{}{}".format(get_column_letter(col2), row2)
         elif isinstance(arg2, Range):
             row2 = max(arg1.row + arg1.shape[0] - 1, arg2.row + arg2.shape[0] - 1)
             col2 = max(arg1.column + arg1.shape[1] - 1, arg2.column + arg2.shape[1] - 1)
-            address2 = self.xl.rows[row2].columns[col2].get_address()
+            # HF address2 = self.xl.rows[row2].columns[col2].get_address()
+            address2 = "{}{}".format(get_column_letter(col2), row2)
         elif isinstance(arg2, str):
             address2 = arg2
         elif arg2 is None:
@@ -723,6 +728,10 @@ class Sheet(base_classes.Sheet):
         return self.range(
             (1, 1), (self.xl.count(each=kw.row), self.xl.count(each=kw.column))
         )
+
+    @property
+    def used_range(self):
+        return Range(self, self.xl.used_range.get_address())
 
     def activate(self):
         self.xl.activate_object()
@@ -756,9 +765,18 @@ class Sheet(base_classes.Sheet):
 
     def delete(self):
         alerts_state = self.book.app.xl.display_alerts.get()
-        self.book.app.xl.display_alerts.set(False)
+        self.book.app.xl.display_alerts.set(False, waitreply=False)
         self.xl.delete()
         self.book.app.xl.display_alerts.set(alerts_state)
+        self.book.app.xl.display_alerts.set(alerts_state, waitreply=False)
+
+    # HF Function
+    def unhide(self):
+        self.xl.visible.set(kw.sheet_visible, waitreply=False)
+
+    # HF Function
+    def hide(self):
+        self.xl.visible.set(kw.sheet_hidden, waitreply=False)
 
     def copy(self, before, after):
         if before:
@@ -821,17 +839,24 @@ class Range(base_classes.Range):
                 self.xl = None
         else:
             self.xl = sheet.xl.cells[address]
-            self._coords = None
+            # HF self._coords = None
+            bounds = range_boundaries(address)
+            self._coords = (
+                bounds[1],
+                bounds[0],
+                bounds[3] - bounds[1] + 1,
+                bounds[2] - bounds[0] + 1,
+            )
 
     @property
     def coords(self):
-        if self._coords is None:
-            self._coords = (
-                self.xl.first_row_index.get(),
-                self.xl.first_column_index.get(),
-                self.xl.count(each=kw.row),
-                self.xl.count(each=kw.column),
-            )
+        # HF if self._coords is None:
+        #     self._coords = (
+        #         self.xl.first_row_index.get(),
+        #         self.xl.first_column_index.get(),
+        #         self.xl.count(each=kw.row),
+        #         self.xl.count(each=kw.column),
+        #     )
         return self._coords
 
     @property
@@ -913,7 +938,7 @@ class Range(base_classes.Range):
     @formula.setter
     def formula(self, value):
         if self.xl is not None:
-            self.xl.formula.set(value)
+            self.xl.formula.set(value, waitreply=False)
 
     @property
     def formula2(self):
@@ -1104,27 +1129,160 @@ class Range(base_classes.Range):
                 },
             )
 
+    # HF Function
     @property
-    def color(self):
-        if (
-            not self.xl
-            or self.xl.interior_object.color_index.get() == kw.color_index_none
-        ):
+    def font(self):
+        if not self.xl:
             return None
         else:
-            return tuple(self.xl.interior_object.color.get())
+            props = self.xl.font_object.properties.get()
+            return dict((k.name, v) for (k, v) in props.items())
 
-    @color.setter
-    def color(self, color_or_rgb):
-        if isinstance(color_or_rgb, str):
-            color_or_rgb = utils.hex_to_rgb(color_or_rgb)
+    # HF Function
+    @font.setter
+    def font(self, properties):
         if self.xl is not None:
-            if color_or_rgb is None:
-                self.xl.interior_object.color_index.set(ColorIndex.xlColorIndexNone)
-            elif isinstance(color_or_rgb, int):
-                self.xl.interior_object.color.set(int_to_rgb(color_or_rgb))
-            else:
-                self.xl.interior_object.color.set(color_or_rgb)
+            keywords = dict((appscript.Keyword(k), v) for (k, v) in properties.items())
+            self.xl.font_object.properties.set(keywords, waitreply=False)
+
+    # HF @property
+    # def color(self):
+    #     if (
+    #         not self.xl
+    #         or self.xl.interior_object.color_index.get() == kw.color_index_none
+    #     ):
+    #         return None
+    #     else:
+    #         return tuple(self.xl.interior_object.color.get())
+    @property
+    def interior(self):
+        if not self.xl:
+            return None
+        else:
+            properties = self.xl.interior_object.properties.get()
+            return dict((k.name, v) for (k, v) in properties.items())
+
+    # HF @color.setter
+    # def color(self, color_or_rgb):
+    #     if isinstance(color_or_rgb, str):
+    #         color_or_rgb = utils.hex_to_rgb(color_or_rgb)
+    #     if self.xl is not None:
+    #         if color_or_rgb is None:
+    #             self.xl.interior_object.color_index.set(ColorIndex.xlColorIndexNone)
+    #         elif isinstance(color_or_rgb, int):
+    #             self.xl.interior_object.color.set(int_to_rgb(color_or_rgb))
+    #         else:
+    #             self.xl.interior_object.color.set(color_or_rgb)
+    @interior.setter
+    def interior(self, properties):
+        keywords = dict((appscript.Keyword(k), v) for (k, v) in properties.items())
+        self.xl.interior_object.properties.set(keywords, waitreply=False)
+
+    # HF------------------------ Start of UNTESTED HF Functions ------------------------
+
+    @property
+    def style(self):
+        if not self.xl:
+            return None
+        else:
+            properties = self.xl.style_object.properties.get()
+            return dict((k.name, v) for (k, v) in properties.items())
+
+    @style.setter
+    def style(self, properties):
+        if self.xl is not None:
+            keywords = dict((appscript.Keyword(k), v) for (k, v) in properties.items())
+            self.xl.style_object.properties.set(keywords, waitreply=False)
+
+    def _border_get_properties(self, target):
+        if not self.xl:
+            return None
+        else:
+            properties = self.xl.get_border(
+                which_border=appscript.Keyword(target)
+            ).properties.get()
+            return dict((k.name, v) for (k, v) in properties.items())
+
+    def _border_apply_properties(self, target, properties):
+        if self.xl is not None:
+            keywords = dict(
+                (appscript.Keyword(k), appscript.Keyword(v) if type(v) is str else v)
+                for (k, v) in properties.items()
+            )
+            self.xl.get_border(which_border=appscript.Keyword(target)).properties.set(
+                keywords, waitreply=False
+            )
+
+    @property
+    def border_top(self):
+        return self.rows[0]._border_get_properties("border_top")
+
+    @border_top.setter
+    def border_top(self, properties):
+        self.rows[0]._border_apply_properties("border_top", properties)
+
+    @property
+    def border_right(self):
+        return self.columns[-1]._border_get_properties("border_right")
+
+    @border_right.setter
+    def border_right(self, properties):
+        self.columns[-1]._border_apply_properties("border_right", properties)
+
+    @property
+    def border_bottom(self):
+        return self.rows[-1]._border_get_properties("border_bottom")
+
+    @border_bottom.setter
+    def border_bottom(self, properties):
+        self.rows[-1]._border_apply_properties("border_bottom", properties)
+
+    @property
+    def border_left(self):
+        return self.columns[0]._border_get_properties("border_left")
+
+    @border_left.setter
+    def border_left(self, properties):
+        self.columns[0]._border_apply_properties("border_left", properties)
+
+    @property
+    def borders(self):
+        return {
+            "top": self.border_top,
+            "right": self.border_right,
+            "bottom": self.border_bottom,
+            "left": self.border_left,
+        }
+
+    @borders.setter
+    def borders(self, properties):
+        self.border_top = properties
+        self.border_right = properties
+        self.border_bottom = properties
+        self.border_left = properties
+
+    @property
+    def borders_horizontal(self):
+        return {
+            "top": self.border_top,
+            "bottom": self.border_bottom,
+        }
+
+    @borders_horizontal.setter
+    def borders_horizontal(self, properties):
+        self.border_top = properties
+        self.border_bottom = properties
+
+    @property
+    def borders_vertical(self):
+        return {"right": self.border_right, "left": self.border_left}
+
+    @borders_vertical.setter
+    def borders_vertical(self, properties):
+        self.border_right = properties
+        self.border_left = properties
+
+    # HF------------------------ End of UNTESTED HF Functions ------------------------
 
     @property
     def name(self):
@@ -1139,7 +1297,7 @@ class Range(base_classes.Range):
     @name.setter
     def name(self, value):
         if self.xl is not None:
-            self.xl.name.set(value)
+            self.xl.name.set(value, waitreply=False)
 
     def __call__(self, arg1, arg2=None):
         if arg2 is None:

@@ -18,7 +18,14 @@ from pathlib import Path
 
 import xlwings
 
-from . import LicenseError, ShapeAlreadyExists, XlwingsError, utils #, enable_caching, cache_timeout
+from . import (
+    LicenseError,
+    ShapeAlreadyExists,
+    XlwingsError,
+    utils,
+    enable_caching,
+    cache_timeout,
+)
 
 # Optional imports
 try:
@@ -39,6 +46,7 @@ except ImportError:
     PIL = None
 
 from cached_property import cached_property_with_ttl
+
 
 class Collection:
     def __init__(self, impl):
@@ -1098,7 +1106,8 @@ class Book:
         """
         return self.app.macro("'{0}'!{1}".format(self.name, name))
 
-    @property
+    # HF @property
+    @cached_property_with_ttl(ttl=cache_timeout)
     def name(self):
         """
         Returns the name of the book as str.
@@ -1379,10 +1388,16 @@ class Sheet:
     def __hash__(self):
         return hash((self.book, self.name))
 
+    # HF Function
+    @cached_property_with_ttl(ttl=cache_timeout)
+    def get_name(self):
+        return self.impl.name
+
     @property
     def name(self):
         """Gets or sets the name of the Sheet."""
-        return self.impl.name
+        # HF return self.impl.name
+        return self.get_name
 
     @name.setter
     def name(self, value):
@@ -1449,6 +1464,18 @@ class Sheet:
         """
         return Range(impl=self.impl.cells)
 
+    # HF Function
+    @property
+    def used_range(self):
+        """
+        TODO: Document
+        Returns
+        -------
+        Range object
+        """
+
+        return Range(impl=self.impl.used_range)
+
     def activate(self):
         """Activates the Sheet and returns it."""
         self.book.activate()
@@ -1499,6 +1526,22 @@ class Sheet:
         .. versionadded:: 0.2.3
         """
         return self.impl.autofit(axis)
+
+    # HF Function
+    def unhide(self):
+        """
+        Unhides the Sheet.
+        .. versionadded:
+        """
+        return self.impl.unhide()
+
+    # HF Function
+    def hide(self):
+        """
+        Hides the Sheet.
+        .. versionadded:
+        """
+        return self.impl.hide()
 
     def delete(self):
         """
@@ -2305,6 +2348,7 @@ class Range:
         """
         return self.impl.autofit()
 
+    # HF Preserved
     @property
     def color(self):
         """
@@ -2334,9 +2378,110 @@ class Range:
         """
         return self.impl.color
 
+    # HF Preserved
     @color.setter
     def color(self, color_or_rgb):
         self.impl.color = color_or_rgb
+
+    # HF Function
+    @property
+    def font(self):
+        return self.impl.font
+
+    # HF Function
+    @font.setter
+    def font(self, properties):
+        self.impl.font = properties
+
+    # HF Function
+    @property
+    def interior(self):
+        return self.impl.interior
+
+    # HF Function
+    @interior.setter
+    def interior(self, properties):
+        self.impl.interior = properties
+
+    # HF Function
+    @property
+    def style(self):
+        return self.impl.style
+
+    # HF Function
+    @style.setter
+    def style(self, properties):
+        self.impl.style = properties
+
+    # HF Function
+    @property
+    def border_top(self):
+        return self.impl.border_top
+
+    # HF Function
+    @border_top.setter
+    def border_top(self, properties):
+        self.impl.border_top = properties
+
+    # HF Function
+    @property
+    def border_right(self):
+        return self.impl.border_right
+
+    # HF Function
+    @border_right.setter
+    def border_right(self, properties):
+        self.impl.border_right = properties
+
+    # HF Function
+    @property
+    def border_bottom(self):
+        return self.impl.border_bottom
+
+    # HF Function
+    @border_bottom.setter
+    def border_bottom(self, properties):
+        self.impl.border_bottom = properties
+
+    # HF Function
+    @property
+    def border_left(self):
+        return self.impl.border_left
+
+    # HF Function
+    @border_left.setter
+    def border_left(self, properties):
+        self.impl.border_left = properties
+
+    # HF Function
+    @property
+    def borders(self):
+        return self.impl.borders
+
+    # HF Function
+    @borders.setter
+    def borders(self, properties):
+        self.impl.borders = properties
+
+    # HF Function
+    @property
+    def borders_horizontal(self):
+        return self.impl.borders_horizontal
+
+    # HF Function
+    @borders_horizontal.setter
+    def borders_horizontal(self, properties):
+        self.impl.borders_horizontal = properties
+
+    # HF Function
+    @property
+    def borders_vertical(self):
+        return self.impl.borders_vertical
+
+    # HF Function
+    @borders_vertical.setter
+    def borders_vertical(self, properties):
+        self.impl.borders_vertical = properties
 
     @property
     def name(self):
@@ -2696,7 +2841,11 @@ class Range:
         else:
             column_size = self.shape[1]
 
-        return Range(self(1, 1), self(row_size, column_size)).options(**self._options)
+        # HF return Range(self(1, 1), self(row_size, column_size)).options(**self._options)
+        return self.sheet.range(
+            (self.row, self.column),
+            (self.row + row_size - 1, self.column + column_size - 1),
+        ).options(**self._options)
 
     def offset(self, row_offset=0, column_offset=0):
         """
@@ -2710,9 +2859,16 @@ class Range:
 
         .. versionadded:: 0.3.0
         """
-        return Range(
-            self(row_offset + 1, column_offset + 1),
-            self(row_offset + self.shape[0], column_offset + self.shape[1]),
+        # HF return Range(
+        #     self(row_offset + 1, column_offset + 1),
+        #     self(row_offset + self.shape[0], column_offset + self.shape[1]),
+        # ).options(**self._options)
+        return self.sheet.range(
+            (self.row + row_offset, self.column + column_offset),
+            (
+                self.row + row_offset + self.shape[0] - 1,
+                self.column + column_offset + self.shape[1] - 1,
+            ),
         ).options(**self._options)
 
     @property
