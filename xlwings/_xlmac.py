@@ -839,24 +839,27 @@ class Range(base_classes.Range):
                 self.xl = None
         else:
             self.xl = sheet.xl.cells[address]
-            # HF self._coords = None
-            bounds = range_boundaries(address)
-            self._coords = (
-                bounds[1],
-                bounds[0],
-                bounds[3] - bounds[1] + 1,
-                bounds[2] - bounds[0] + 1,
-            )
+            #HF Spencer Comment out next line
+            self._coords = None
+            # HF Spencer patch, dontet break any test_font
+            # bounds = range_boundaries(address)
+            # self._coords = (
+            #     bounds[1],
+            #     bounds[0],
+            #     bounds[3] - bounds[1] + 1,
+            #     bounds[2] - bounds[0] + 1,
+            # )
 
     @property
     def coords(self):
-        # HF if self._coords is None:
-        #     self._coords = (
-        #         self.xl.first_row_index.get(),
-        #         self.xl.first_column_index.get(),
-        #         self.xl.count(each=kw.row),
-        #         self.xl.count(each=kw.column),
-        #     )
+        # HF Spencer remove down to but dont include return
+        if self._coords is None:
+            self._coords = (
+                self.xl.first_row_index.get(),
+                self.xl.first_column_index.get(),
+                self.xl.count(each=kw.row),
+                self.xl.count(each=kw.column),
+            )
         return self._coords
 
     @property

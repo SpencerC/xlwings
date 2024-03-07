@@ -2841,11 +2841,13 @@ class Range:
         else:
             column_size = self.shape[1]
 
-        # HF return Range(self(1, 1), self(row_size, column_size)).options(**self._options)
-        return self.sheet.range(
-            (self.row, self.column),
-            (self.row + row_size - 1, self.column + column_size - 1),
-        ).options(**self._options)
+        return Range(self(1, 1), self(row_size, column_size)).options(**self._options)
+
+        #HF Spencer Patch (breaks 5 of 5 tests in test_font
+        # return self.sheet.range(
+        #     (self.row, self.column),
+        #     (self.row + row_size - 1, self.column + column_size - 1),
+        # ).options(**self._options)
 
     def offset(self, row_offset=0, column_offset=0):
         """
@@ -2859,17 +2861,19 @@ class Range:
 
         .. versionadded:: 0.3.0
         """
-        # HF return Range(
-        #     self(row_offset + 1, column_offset + 1),
-        #     self(row_offset + self.shape[0], column_offset + self.shape[1]),
-        # ).options(**self._options)
-        return self.sheet.range(
-            (self.row + row_offset, self.column + column_offset),
-            (
-                self.row + row_offset + self.shape[0] - 1,
-                self.column + column_offset + self.shape[1] - 1,
-            ),
+        return Range(
+            self(row_offset + 1, column_offset + 1),
+            self(row_offset + self.shape[0], column_offset + self.shape[1]),
         ).options(**self._options)
+
+        # HF Spencer Patch breaks no tests in test_font
+        # return self.sheet.range(
+        #     (self.row + row_offset, self.column + column_offset),
+        #     (
+        #         self.row + row_offset + self.shape[0] - 1,
+        #         self.column + column_offset + self.shape[1] - 1,
+        #     ),
+        # ).options(**self._options)
 
     @property
     def last_cell(self):
