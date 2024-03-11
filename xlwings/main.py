@@ -1396,7 +1396,8 @@ class Sheet:
     @property
     def name(self):
         """Gets or sets the name of the Sheet."""
-        # HF return self.impl.name
+        # HF - original xlwings code
+        # return self.impl.name
         return self.get_name
 
     @name.setter
@@ -1464,17 +1465,17 @@ class Sheet:
         """
         return Range(impl=self.impl.cells)
 
-    # HF Function
-    @property
-    def used_range(self):
-        """
-        TODO: Document
-        Returns
-        -------
-        Range object
-        """
-
-        return Range(impl=self.impl.used_range)
+    # HF Function - Spencer Patch - tested non-breaking
+    # @property
+    # def used_range(self):
+    #     """
+    #     TODO: Document
+    #     Returns
+    #     -------
+    #     Range object
+    #     """
+    #
+    #     return Range(impl=self.impl.used_range)
 
     def activate(self):
         """Activates the Sheet and returns it."""
@@ -1527,7 +1528,7 @@ class Sheet:
         """
         return self.impl.autofit(axis)
 
-    # HF Function
+    # HF Function - tested non-breaking test_sheet
     def unhide(self):
         """
         Unhides the Sheet.
@@ -1535,7 +1536,7 @@ class Sheet:
         """
         return self.impl.unhide()
 
-    # HF Function
+    # HF Function - tested non-breaking test_sheet
     def hide(self):
         """
         Hides the Sheet.
@@ -2383,105 +2384,105 @@ class Range:
     def color(self, color_or_rgb):
         self.impl.color = color_or_rgb
 
-    # HF Function
-    @property
-    def font(self):
-        return self.impl.font
+    # # HF Function
+    # @property
+    # def font(self):
+    #     return self.impl.font
+    #
+    # # HF Function
+    # @font.setter
+    # def font(self, properties):
+    #     self.impl.font = properties
 
-    # HF Function
-    @font.setter
-    def font(self, properties):
-        self.impl.font = properties
-
-    # HF Function
-    @property
-    def interior(self):
-        return self.impl.interior
-
-    # HF Function
-    @interior.setter
-    def interior(self, properties):
-        self.impl.interior = properties
-
-    # HF Function
-    @property
-    def style(self):
-        return self.impl.style
-
-    # HF Function
-    @style.setter
-    def style(self, properties):
-        self.impl.style = properties
-
-    # HF Function
-    @property
-    def border_top(self):
-        return self.impl.border_top
-
-    # HF Function
-    @border_top.setter
-    def border_top(self, properties):
-        self.impl.border_top = properties
-
-    # HF Function
-    @property
-    def border_right(self):
-        return self.impl.border_right
-
-    # HF Function
-    @border_right.setter
-    def border_right(self, properties):
-        self.impl.border_right = properties
-
-    # HF Function
-    @property
-    def border_bottom(self):
-        return self.impl.border_bottom
-
-    # HF Function
-    @border_bottom.setter
-    def border_bottom(self, properties):
-        self.impl.border_bottom = properties
-
-    # HF Function
-    @property
-    def border_left(self):
-        return self.impl.border_left
-
-    # HF Function
-    @border_left.setter
-    def border_left(self, properties):
-        self.impl.border_left = properties
-
-    # HF Function
-    @property
-    def borders(self):
-        return self.impl.borders
-
-    # HF Function
-    @borders.setter
-    def borders(self, properties):
-        self.impl.borders = properties
-
-    # HF Function
-    @property
-    def borders_horizontal(self):
-        return self.impl.borders_horizontal
-
-    # HF Function
-    @borders_horizontal.setter
-    def borders_horizontal(self, properties):
-        self.impl.borders_horizontal = properties
-
-    # HF Function
-    @property
-    def borders_vertical(self):
-        return self.impl.borders_vertical
-
-    # HF Function
-    @borders_vertical.setter
-    def borders_vertical(self, properties):
-        self.impl.borders_vertical = properties
+    # # HF Function
+    # @property
+    # def interior(self):
+    #     return self.impl.interior
+    #
+    # # HF Function
+    # @interior.setter
+    # def interior(self, properties):
+    #     self.impl.interior = properties
+    #
+    # # HF Function
+    # @property
+    # def style(self):
+    #     return self.impl.style
+    #
+    # # HF Function
+    # @style.setter
+    # def style(self, properties):
+    #     self.impl.style = properties
+    #
+    # # HF Function
+    # @property
+    # def border_top(self):
+    #     return self.impl.border_top
+    #
+    # # HF Function
+    # @border_top.setter
+    # def border_top(self, properties):
+    #     self.impl.border_top = properties
+    #
+    # # HF Function
+    # @property
+    # def border_right(self):
+    #     return self.impl.border_right
+    #
+    # # HF Function
+    # @border_right.setter
+    # def border_right(self, properties):
+    #     self.impl.border_right = properties
+    #
+    # # HF Function
+    # @property
+    # def border_bottom(self):
+    #     return self.impl.border_bottom
+    #
+    # # HF Function
+    # @border_bottom.setter
+    # def border_bottom(self, properties):
+    #     self.impl.border_bottom = properties
+    #
+    # # HF Function
+    # @property
+    # def border_left(self):
+    #     return self.impl.border_left
+    #
+    # # HF Function
+    # @border_left.setter
+    # def border_left(self, properties):
+    #     self.impl.border_left = properties
+    #
+    # # HF Function
+    # @property
+    # def borders(self):
+    #     return self.impl.borders
+    #
+    # # HF Function
+    # @borders.setter
+    # def borders(self, properties):
+    #     self.impl.borders = properties
+    #
+    # # HF Function
+    # @property
+    # def borders_horizontal(self):
+    #     return self.impl.borders_horizontal
+    #
+    # # HF Function
+    # @borders_horizontal.setter
+    # def borders_horizontal(self, properties):
+    #     self.impl.borders_horizontal = properties
+    #
+    # # HF Function
+    # @property
+    # def borders_vertical(self):
+    #     return self.impl.borders_vertical
+    #
+    # # HF Function
+    # @borders_vertical.setter
+    # def borders_vertical(self, properties):
+    #     self.impl.borders_vertical = properties
 
     @property
     def name(self):

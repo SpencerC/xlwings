@@ -4,6 +4,7 @@ from functools import wraps
 
 __version__ = "dev"
 
+# HF Spencer Patch - 2 properties below
 enable_caching = True
 cache_timeout = 5
 
