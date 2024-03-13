@@ -4,6 +4,10 @@ from functools import wraps
 
 __version__ = "dev"
 
+# HF Spencer Patch - 2 properties below
+enable_caching = True
+cache_timeout = 5
+
 # Platform specifics
 if sys.platform.startswith("darwin"):
     USER_CONFIG_FILE = os.path.join(
