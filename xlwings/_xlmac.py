@@ -684,7 +684,7 @@ class Sheet(base_classes.Sheet):
                     )
                 row1 = arg1[0]
                 col1 = arg1[1]
-                address1 = self.xl.rows[row1].columns[col1].get_address()
+                #address1 = self.xl.rows[row1].columns[col1].get_address()
                 # HF Spencer Patch - no change to tests - non-breaking
                 address1 = "{}{}".format(get_column_letter(col1), row1)
             elif len(arg1) == 4:
@@ -694,7 +694,7 @@ class Sheet(base_classes.Sheet):
         elif isinstance(arg1, Range):
             row1 = min(arg1.row, arg2.row)
             col1 = min(arg1.column, arg2.column)
-            address1 = self.xl.rows[row1].columns[col1].get_address()
+            #address1 = self.xl.rows[row1].columns[col1].get_address()
             # HF Spencer Patch - no change to tests - non-breaking
             address1 = "{}{}".format(get_column_letter(col1), row1)
         elif isinstance(arg1, str):
@@ -710,13 +710,13 @@ class Sheet(base_classes.Sheet):
                 )
             row2 = arg2[0]
             col2 = arg2[1]
-            address2 = self.xl.rows[row2].columns[col2].get_address()
+            #address2 = self.xl.rows[row2].columns[col2].get_address()
             # HF Spencer Patch - no change to tests - non-breaking
             address2 = "{}{}".format(get_column_letter(col2), row2)
         elif isinstance(arg2, Range):
             row2 = max(arg1.row + arg1.shape[0] - 1, arg2.row + arg2.shape[0] - 1)
             col2 = max(arg1.column + arg1.shape[1] - 1, arg2.column + arg2.shape[1] - 1)
-            address2 = self.xl.rows[row2].columns[col2].get_address()
+            #address2 = self.xl.rows[row2].columns[col2].get_address()
             # HF Spencer Patch - no change to tests - non-breaking
             address2 = "{}{}".format(get_column_letter(col2), row2)
         elif isinstance(arg2, str):
@@ -737,7 +737,7 @@ class Sheet(base_classes.Sheet):
             (1, 1), (self.xl.count(each=kw.row), self.xl.count(each=kw.column))
         )
 
-    # HF Function Spencer Patch - breaks test_zero_based_index3 and 4 but inconsistent
+    # HF Commit 2 - Spencer Patch - Function - duplicate of recent XLW update
     # @property
     # def used_range(self):
     #     return Range(self, self.xl.used_range.get_address())
@@ -774,9 +774,19 @@ class Sheet(base_classes.Sheet):
 
     def delete(self):
         alerts_state = self.book.app.xl.display_alerts.get()
-        self.book.app.xl.display_alerts.set(False)
+        # HF Commit 2 - Spencer Patch - added waitreply below
+        self.book.app.xl.display_alerts.set(False, waitreply=False)
         self.xl.delete()
-        self.book.app.xl.display_alerts.set(alerts_state)
+        # HF Commit 2 - Spencer Patch - added waitreply below
+        self.book.app.xl.display_alerts.set(alerts_state, waitreply=False)
+
+    # HF Commit 2 - Function - no change to tests - non-breaking
+    def unhide(self):
+        self.xl.visible.set(kw.sheet_visible, waitreply=False)
+
+    # HF Commit 2 - Function - no change to tests - non-breaking
+    def hide(self):
+        self.xl.visible.set(kw.sheet_hidden, waitreply=False)
 
     def copy(self, before, after):
         if before:
@@ -822,8 +832,10 @@ class Range(base_classes.Range):
     def __init__(self, sheet, address):
         self.sheet = sheet
         self.options = None  # Assigned by main.Range to keep API of sheet.range clean
+        self.coordTest = None
         if isinstance(address, tuple):
             self._coords = address
+            self.coordTest = address
             row, col, nrows, ncols = address
             if nrows and ncols:
                 self.xl = sheet.xl.cells[
@@ -840,9 +852,19 @@ class Range(base_classes.Range):
         else:
             self.xl = sheet.xl.cells[address]
             self._coords = None
+            # HF Commit 2 - Spencer patch - no change to tests - non-breaking
+            bounds = range_boundaries(address)
+            if not None in bounds: # Necessary to prevent arithmetic on none types in range tests
+                self._coords = (
+                    bounds[1],
+                    bounds[0],
+                    bounds[3] - bounds[1] + 1,
+                    bounds[2] - bounds[0] + 1,
+                )
 
     @property
     def coords(self):
+        # HF Commit 2 - Below removed in Spencer Patch but necessary to protect against None Types
         if self._coords is None:
             self._coords = (
                 self.xl.first_row_index.get(),
