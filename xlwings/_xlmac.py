@@ -953,7 +953,8 @@ class Range(base_classes.Range):
     @formula.setter
     def formula(self, value):
         if self.xl is not None:
-            self.xl.formula.set(value)
+            # HF Commit 3 - Spencer Patch
+            self.xl.formula.set(value, waitreply=False)
 
     @property
     def formula2(self):
@@ -974,11 +975,176 @@ class Range(base_classes.Range):
     @formula_array.setter
     def formula_array(self, value):
         if self.xl is not None:
-            self.xl.formula_array.set(value)
+            # HF Commit 3 - Spencer Patch
+            self.xl.formula_array.set(value, waitreply=False)
 
     @property
     def font(self):
         return Font(self, self.xl.font_object)
+
+    # HF Commit 3 - Seth Patch - preserve font fn & replaces Spencer Patch color fn
+    # HF TODO: Test
+    @property
+    def font_props(self):
+        if not self.xl:
+            return None
+        else:
+            props = self.xl.font_object.properties.get()
+            return dict((k.name, v) for (k, v) in props.items())
+
+    # HF TODO: Test
+    @font_props.setter
+    def font_props(self, properties):
+        if self.xl is not None:
+            keywords = dict((appscript.Keyword(k), v) for (k, v) in properties.items())
+            self.xl.font_object.properties.set(keywords, waitreply=False)
+
+    # HF Commit 3 - Spencer Patch - interior prop
+    # HF TODO: Test
+    @property
+    def interior(self):
+        if not self.xl:
+            return None
+        else:
+            properties = self.xl.interior_object.properties.get()
+            return dict((k.name, v) for (k, v) in properties.items())
+
+    # HF TODO: Test
+    @interior.setter
+    def interior(self, properties):
+        if self.xl is not None:
+            keywords = dict((appscript.Keyword(k), v) for (k, v) in properties.items())
+            self.xl.interior_object.properties.set(keywords, waitreply=False)
+
+    # HF Commit 3 - Spencer Patch - style prop
+    # HF TODO: Test
+    @property
+    def style(self):
+        if not self.xl:
+            return None
+        else:
+            properties = self.xl.style_object.properties.get()
+            return dict((k.name, v) for (k, v) in properties.items())
+
+    # HF TODO: Test
+    @style.setter
+    def style(self, properties):
+        if self.xl is not None:
+            keywords = dict((appscript.Keyword(k), v) for (k, v) in properties.items())
+            self.xl.style_object.properties.set(keywords, waitreply=False)
+
+    # HF Commit 3 - Spencer Patch - border function
+    # HF TODO: Test
+    def _border_get_properties(self, target):
+        if not self.xl:
+            return None
+        else:
+            properties = self.xl.get_border(
+                which_border=appscript.Keyword(target)
+            ).properties.get()
+            return dict((k.name, v) for (k, v) in properties.items())
+
+    # HF Commit 3 - Spencer Patch - border function
+    # HF TODO: Test
+    def _border_apply_properties(self, target, properties):
+        if self.xl is not None:
+            keywords = dict(
+                (appscript.Keyword(k), appscript.Keyword(v) if type(v) is str else v)
+                for (k, v) in properties.items()
+            )
+            self.xl.get_border(which_border=appscript.Keyword(target)).properties.set(
+                keywords, waitreply=False
+            )
+
+    # HF Commit 3 - Spencer Patch - border_top function
+    # HF TODO: Test
+    @property
+    def border_top(self):
+        return self.rows[0]._border_get_properties("border_top")
+
+    # HF TODO: Test
+    @border_top.setter
+    def border_top(self, properties):
+        self.rows[0]._border_apply_properties("border_top", properties)
+
+    # HF Commit 3 - Spencer Patch - border_right function
+    # HF TODO: Test
+    @property
+    def border_right(self):
+        return self.columns[-1]._border_get_properties("border_right")
+
+    # HF TODO: Test
+    @border_right.setter
+    def border_right(self, properties):
+        self.columns[-1]._border_apply_properties("border_right", properties)
+
+    # HF Commit 3 - Spencer Patch - border_bottom function
+    # HF TODO: Test
+    @property
+    def border_bottom(self):
+        return self.rows[-1]._border_get_properties("border_bottom")
+
+    # HF TODO: Test
+    @border_bottom.setter
+    def border_bottom(self, properties):
+        self.rows[-1]._border_apply_properties("border_bottom", properties)
+
+    # HF Commit 3 - Spencer Patch - border_left function
+    # HF TODO: Test
+    @property
+    def border_left(self):
+        return self.columns[0]._border_get_properties("border_left")
+
+    # HF TODO: Test
+    @border_left.setter
+    def border_left(self, properties):
+        self.columns[0]._border_apply_properties("border_left", properties)
+
+    # HF Commit 3 - Spencer Patch - borders function
+    # HF TODO: Test
+    @property
+    def borders(self):
+        return {
+            "top": self.border_top,
+            "right": self.border_right,
+            "bottom": self.border_bottom,
+            "left": self.border_left,
+        }
+
+    # HF TODO: Test
+    @borders.setter
+    def borders(self, properties):
+        self.border_top = properties
+        self.border_right = properties
+        self.border_bottom = properties
+        self.border_left = properties
+
+    # HF Commit 3 - Spencer Patch - border_horiontal function
+    # HF TODO: Test
+    @property
+    def borders_horizontal(self):
+        return {
+            "top": self.border_top,
+            "bottom": self.border_bottom,
+        }
+
+    # HF TODO: Test
+    @borders_horizontal.setter
+    def borders_horizontal(self, properties):
+        self.border_top = properties
+        self.border_bottom = properties
+
+    # HF Commit 3 - Spencer Patch - border_vertial function
+    # HF TODO: Test
+    @property
+    def borders_vertical(self):
+        return {"right": self.border_right, "left": self.border_left}
+
+    # HF TODO: Test
+    @borders_vertical.setter
+    def borders_vertical(self, properties):
+        self.border_right = properties
+        self.border_left = properties
 
     @property
     def column_width(self):
@@ -991,7 +1157,8 @@ class Range(base_classes.Range):
     @column_width.setter
     def column_width(self, value):
         if self.xl is not None:
-            self.xl.column_width.set(value)
+            # HF Commit 3 - Spencer Patch
+            self.xl.column_width.set(value, waitreply=False)
 
     @property
     def row_height(self):
@@ -1004,7 +1171,8 @@ class Range(base_classes.Range):
     @row_height.setter
     def row_height(self, value):
         if self.xl is not None:
-            self.xl.row_height.set(value)
+            # HF Commit 3 - Spencer Patch
+            self.xl.row_height.set(value, waitreply=False)
 
     @property
     def width(self):
@@ -1148,7 +1316,7 @@ class Range(base_classes.Range):
     def color(self):
         if (
             not self.xl
-            or self.xl.interior_object.color_index.get() == kw.color_index_none
+        or self.xl.interior_object.color_index.get() == kw.color_index_none
         ):
             return None
         else:
@@ -1179,7 +1347,8 @@ class Range(base_classes.Range):
     @name.setter
     def name(self, value):
         if self.xl is not None:
-            self.xl.name.set(value)
+            # HF Commit 3 - Spencer Patch
+            self.xl.name.set(value, waitreply=False)
 
     def __call__(self, arg1, arg2=None):
         if arg2 is None:
