@@ -63,6 +63,8 @@ class WriteValueToRangeStage:
                 rng.raw_value = value
 
     def __call__(self, ctx):
+        # HF Commit 4 - Spencer Patch - omitted b/c breaks test_range.test_jagged_array
+        # if ctx.range is not None and ctx.value is not None:
         if ctx.range and ctx.value:
             if self.raw:
                 ctx.range.raw_value = ctx.value

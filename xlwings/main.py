@@ -16,6 +16,12 @@ import warnings
 from contextlib import contextmanager
 from pathlib import Path
 
+# HF Commit 4 - Spencer Patch
+from cached_property import cached_property_with_ttl
+from . import ShapeAlreadyExists, enable_caching, cache_timeout
+
+from .utils import VersionNumber
+
 import xlwings
 
 from . import LicenseError, ShapeAlreadyExists, XlwingsError, utils
@@ -1097,7 +1103,9 @@ class Book:
         """
         return self.app.macro("'{0}'!{1}".format(self.name, name))
 
+    # HF Commit 4 - Spencer Patch
     @property
+    #@cached_property_with_ttl(ttl=cache_timeout)
     def name(self):
         """
         Returns the name of the book as str.
@@ -1378,10 +1386,17 @@ class Sheet:
     def __hash__(self):
         return hash((self.book, self.name))
 
+    # HF Commit 4 - Spencer Patch - new function
+    @cached_property_with_ttl(ttl=cache_timeout)
+    def get_name(self):
+        return self.impl.name
+
     @property
     def name(self):
         """Gets or sets the name of the Sheet."""
-        return self.impl.name
+        # HF Commit 4 - Spencer Patch
+        #return self.impl.name
+        return self.get_name
 
     @name.setter
     def name(self, value):
@@ -1734,6 +1749,22 @@ class Sheet:
     @visible.setter
     def visible(self, value):
         self.impl.visible = value
+
+    # HF Commit 4 - Spencer Patch - new function
+    def unhide(self):
+        """
+        Unhides the Sheet.
+        .. versionadded:
+        """
+        return self.impl.unhide()
+
+    # HF Commit 4 - Spencer Patch - new function
+    def hide(self):
+        """
+        Hides the Sheet.
+        .. versionadded:
+        """
+        return self.impl.hide()
 
     @property
     def page_setup(self):
