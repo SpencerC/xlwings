@@ -684,7 +684,7 @@ class Sheet(base_classes.Sheet):
                     )
                 row1 = arg1[0]
                 col1 = arg1[1]
-                #address1 = self.xl.rows[row1].columns[col1].get_address()
+                # address1 = self.xl.rows[row1].columns[col1].get_address()
                 # HF Spencer Patch - no change to tests - non-breaking
                 address1 = "{}{}".format(get_column_letter(col1), row1)
             elif len(arg1) == 4:
@@ -694,7 +694,7 @@ class Sheet(base_classes.Sheet):
         elif isinstance(arg1, Range):
             row1 = min(arg1.row, arg2.row)
             col1 = min(arg1.column, arg2.column)
-            #address1 = self.xl.rows[row1].columns[col1].get_address()
+            # address1 = self.xl.rows[row1].columns[col1].get_address()
             # HF Spencer Patch - no change to tests - non-breaking
             address1 = "{}{}".format(get_column_letter(col1), row1)
         elif isinstance(arg1, str):
@@ -710,13 +710,13 @@ class Sheet(base_classes.Sheet):
                 )
             row2 = arg2[0]
             col2 = arg2[1]
-            #address2 = self.xl.rows[row2].columns[col2].get_address()
+            # address2 = self.xl.rows[row2].columns[col2].get_address()
             # HF Spencer Patch - no change to tests - non-breaking
             address2 = "{}{}".format(get_column_letter(col2), row2)
         elif isinstance(arg2, Range):
             row2 = max(arg1.row + arg1.shape[0] - 1, arg2.row + arg2.shape[0] - 1)
             col2 = max(arg1.column + arg1.shape[1] - 1, arg2.column + arg2.shape[1] - 1)
-            #address2 = self.xl.rows[row2].columns[col2].get_address()
+            # address2 = self.xl.rows[row2].columns[col2].get_address()
             # HF Spencer Patch - no change to tests - non-breaking
             address2 = "{}{}".format(get_column_letter(col2), row2)
         elif isinstance(arg2, str):
@@ -860,10 +860,13 @@ class Range(base_classes.Range):
             #   "A:B",
             #   "1:5"
             valid_excel_cell_ref_pattern = re.compile(
-                r'^([A-Za-z]+[1-9]\d*|[A-Za-z]+:[A-Za-z]+|[1-9]\d*:[1-9]\d*|[1-9]\d*|[1-9]\d*:[A-Za-z]+[1-9]\d*|[A-Za-z]+[1-9]\d*:[1-9]\d*|[A-Za-z]+[1-9]\d*:[A-Za-z]+[1-9]\d*)$')
+                r"^([A-Za-z]+[1-9]\d*|[A-Za-z]+:[A-Za-z]+|[1-9]\d*:[1-9]\d*|[1-9]\d*|[1-9]\d*:[A-Za-z]+[1-9]\d*|[A-Za-z]+[1-9]\d*:[1-9]\d*|[A-Za-z]+[1-9]\d*:[A-Za-z]+[1-9]\d*)$"
+            )
             if valid_excel_cell_ref_pattern.match(address):
                 bounds = range_boundaries(address)
-                if not None in bounds: # Necessary to prevent arithmetic on none types in range tests
+                if (
+                    not None in bounds
+                ):  # Necessary to prevent arithmetic on none types in range tests
                     self._coords = (
                         bounds[1],
                         bounds[0],
@@ -1325,7 +1328,7 @@ class Range(base_classes.Range):
     def color(self):
         if (
             not self.xl
-        or self.xl.interior_object.color_index.get() == kw.color_index_none
+            or self.xl.interior_object.color_index.get() == kw.color_index_none
         ):
             return None
         else:

@@ -1105,7 +1105,7 @@ class Book:
 
     # HF Commit 4 - Spencer Patch - breaks default opening and saving of books
     @property
-    #@cached_property_with_ttl(ttl=cache_timeout)
+    # @cached_property_with_ttl(ttl=cache_timeout)
     def name(self):
         """
         Returns the name of the book as str.
@@ -1395,7 +1395,7 @@ class Sheet:
     def name(self):
         """Gets or sets the name of the Sheet."""
         # HF Commit 4 - Spencer Patch
-        #return self.impl.name
+        # return self.impl.name
         return self.get_name
 
     @name.setter
@@ -2087,7 +2087,7 @@ class Range:
     def font(self):
         # HF Commit 5 - Spencer Patch - untested
         return self.impl.font
-        #return Font(impl=self.impl.font)
+        # return Font(impl=self.impl.font)
 
     # HF Commit 5 - Spencer Patch - interior prop
     # HF TODO: Test
@@ -2836,7 +2836,7 @@ class Range:
         else:
             column_size = self.shape[1]
 
-        #return Range(self(1, 1), self(row_size, column_size)).options(**self._options)
+        # return Range(self(1, 1), self(row_size, column_size)).options(**self._options)
         # HF Commit 5 - Spencer Patch
         return self.sheet.range(
             (self.row, self.column),
