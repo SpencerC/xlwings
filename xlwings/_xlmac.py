@@ -853,14 +853,23 @@ class Range(base_classes.Range):
             self.xl = sheet.xl.cells[address]
             self._coords = None
             # HF Commit 2 - Spencer patch - no change to tests - non-breaking
-            bounds = range_boundaries(address)
-            if not None in bounds: # Necessary to prevent arithmetic on none types in range tests
-                self._coords = (
-                    bounds[1],
-                    bounds[0],
-                    bounds[3] - bounds[1] + 1,
-                    bounds[2] - bounds[0] + 1,
-                )
+            # Necessary to differentiate between named ranges and address ranges
+            # tests for the below types of range address patterns:
+            #   "A1",
+            #   "C5:E10",
+            #   "A:B",
+            #   "1:5"
+            valid_excel_cell_ref_pattern = re.compile(
+                r'^([A-Za-z]+[1-9]\d*|[A-Za-z]+:[A-Za-z]+|[1-9]\d*:[1-9]\d*|[1-9]\d*|[1-9]\d*:[A-Za-z]+[1-9]\d*|[A-Za-z]+[1-9]\d*:[1-9]\d*|[A-Za-z]+[1-9]\d*:[A-Za-z]+[1-9]\d*)$')
+            if valid_excel_cell_ref_pattern.match(address):
+                bounds = range_boundaries(address)
+                if not None in bounds: # Necessary to prevent arithmetic on none types in range tests
+                    self._coords = (
+                        bounds[1],
+                        bounds[0],
+                        bounds[3] - bounds[1] + 1,
+                        bounds[2] - bounds[0] + 1,
+                    )
 
     @property
     def coords(self):

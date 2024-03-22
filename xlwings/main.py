@@ -1103,7 +1103,7 @@ class Book:
         """
         return self.app.macro("'{0}'!{1}".format(self.name, name))
 
-    # HF Commit 4 - Spencer Patch
+    # HF Commit 4 - Spencer Patch - breaks default opening and saving of books
     @property
     #@cached_property_with_ttl(ttl=cache_timeout)
     def name(self):
@@ -2085,7 +2085,117 @@ class Range:
 
     @property
     def font(self):
-        return Font(impl=self.impl.font)
+        # HF Commit 5 - Spencer Patch - untested
+        return self.impl.font
+        #return Font(impl=self.impl.font)
+
+    # HF Commit 5 - Spencer Patch - interior prop
+    # HF TODO: Test
+    @property
+    def interior(self):
+        return self.impl.interior
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @font.setter
+    def font(self, properties):
+        self.impl.font = properties
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @property
+    def style(self):
+        return self.impl.style
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @style.setter
+    def style(self, properties):
+        self.impl.style = properties
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @property
+    def border_top(self):
+        return self.impl.border_top
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @border_top.setter
+    def border_top(self, properties):
+        self.impl.border_top = properties
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @property
+    def border_right(self):
+        return self.impl.border_right
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @border_right.setter
+    def border_right(self, properties):
+        self.impl.border_right = properties
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @property
+    def border_bottom(self):
+        return self.impl.border_bottom
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @border_bottom.setter
+    def border_bottom(self, properties):
+        self.impl.border_bottom = properties
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @property
+    def border_left(self):
+        return self.impl.border_left
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @border_left.setter
+    def border_left(self, properties):
+        self.impl.border_left = properties
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @property
+    def borders(self):
+        return self.impl.borders
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @borders.setter
+    def borders(self, properties):
+        self.impl.borders = properties
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @property
+    def borders_horizontal(self):
+        return self.impl.borders_horizontal
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @borders_horizontal.setter
+    def borders_horizontal(self, properties):
+        self.impl.borders_horizontal = properties
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @property
+    def borders_vertical(self):
+        return self.impl.borders_vertical
+
+    # HF Commit 5 - Spencer Patch - untested
+    # HF TODO: Test
+    @borders_vertical.setter
+    def borders_vertical(self, properties):
+        self.impl.borders_vertical = properties
 
     @property
     def characters(self):
@@ -2726,7 +2836,12 @@ class Range:
         else:
             column_size = self.shape[1]
 
-        return Range(self(1, 1), self(row_size, column_size)).options(**self._options)
+        #return Range(self(1, 1), self(row_size, column_size)).options(**self._options)
+        # HF Commit 5 - Spencer Patch
+        return self.sheet.range(
+            (self.row, self.column),
+            (self.row + row_size - 1, self.column + column_size - 1),
+        ).options(**self._options)
 
     def offset(self, row_offset=0, column_offset=0):
         """
@@ -2740,9 +2855,17 @@ class Range:
 
         .. versionadded:: 0.3.0
         """
-        return Range(
-            self(row_offset + 1, column_offset + 1),
-            self(row_offset + self.shape[0], column_offset + self.shape[1]),
+        # return Range(
+        #     self(row_offset + 1, column_offset + 1),
+        #     self(row_offset + self.shape[0], column_offset + self.shape[1]),
+        # ).options(**self._options)
+        # HF Commit 5 - Spencer Patch
+        return self.sheet.range(
+            (self.row + row_offset, self.column + column_offset),
+            (
+                self.row + row_offset + self.shape[0] - 1,
+                self.column + column_offset + self.shape[1] - 1,
+            ),
         ).options(**self._options)
 
     @property
