@@ -16,7 +16,7 @@ from appscript.reference import CommandError
 
 
 # HF Spencer Patch - non-breaking
-from openpyxl.utils.cell import range_boundaries, get_column_letter
+from openpyxl.utils.cell import get_column_letter, range_boundaries
 
 import xlwings
 
@@ -859,20 +859,26 @@ class Range(base_classes.Range):
             #   "C5:E10",
             #   "A:B",
             #   "1:5"
-            valid_excel_cell_ref_pattern = re.compile(
-                r"^([A-Za-z]+[1-9]\d*|[A-Za-z]+:[A-Za-z]+|[1-9]\d*:[1-9]\d*|[1-9]\d*|[1-9]\d*:[A-Za-z]+[1-9]\d*|[A-Za-z]+[1-9]\d*:[1-9]\d*|[A-Za-z]+[1-9]\d*:[A-Za-z]+[1-9]\d*)$"
+            single_cell_ref_pattern = re.compile(r"^[A-Z]+\d+$|^\d+$")
+            range_ref_pattern = re.compile(
+                r"^([A-Z]+\d+|\d+):([A-Z]+\d+|\d+)$|^([A-Z]+):([A-Z]+)$"
             )
-            if valid_excel_cell_ref_pattern.match(address):
-                bounds = range_boundaries(address)
-                if (
-                    not None in bounds
-                ):  # Necessary to prevent arithmetic on none types in range tests
-                    self._coords = (
-                        bounds[1],
-                        bounds[0],
-                        bounds[3] - bounds[1] + 1,
-                        bounds[2] - bounds[0] + 1,
-                    )
+            bounds = None
+
+            if ":" in address:
+                if range_ref_pattern.match(address):
+                    bounds = range_boundaries(address)
+            else:
+                if single_cell_ref_pattern.match(address):
+                    bounds = range_boundaries(address)
+
+            if bounds and None not in bounds:
+                self._coords = (
+                    bounds[1],
+                    bounds[0],
+                    bounds[3] - bounds[1] + 1,
+                    bounds[2] - bounds[0] + 1,
+                )
 
     @property
     def coords(self):
@@ -1061,7 +1067,10 @@ class Range(base_classes.Range):
     def _border_apply_properties(self, target, properties):
         if self.xl is not None:
             keywords = dict(
-                (appscript.Keyword(k), appscript.Keyword(v) if type(v) is str else v)
+                (
+                    appscript.Keyword(k),
+                    appscript.Keyword(v) if isinstance(type(v), str) else v,
+                )
                 for (k, v) in properties.items()
             )
             self.xl.get_border(which_border=appscript.Keyword(target)).properties.set(

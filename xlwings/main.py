@@ -18,13 +18,10 @@ from pathlib import Path
 
 # HF Commit 4 - Spencer Patch
 from cached_property import cached_property_with_ttl
-from . import ShapeAlreadyExists, enable_caching, cache_timeout
-
-from .utils import VersionNumber
 
 import xlwings
 
-from . import LicenseError, ShapeAlreadyExists, XlwingsError, utils
+from . import LicenseError, ShapeAlreadyExists, XlwingsError, cache_timeout, utils
 
 # Optional imports
 try:
