@@ -19,17 +19,17 @@ whether the cell contains a number, a string, is empty or represents a date:
 .. code-block:: python
 
     >>> import datetime as dt
-    >>> sheet = xw.Book().sheets[0]
-    >>> sheet['A1'].value = 1
-    >>> sheet['A1'].value
+    >>> sht = xw.Book().sheets[0]
+    >>> sht.range('A1').value = 1
+    >>> sht.range('A1').value
     1.0
-    >>> sheet['A2'].value = 'Hello'
-    >>> sheet['A2'].value
+    >>> sht.range('A2').value = 'Hello'
+    >>> sht.range('A2').value
     'Hello'
-    >>> sheet['A3'].value is None
+    >>> sht.range('A3').value is None
     True
-    >>> sheet['A4'].value = dt.datetime(2000, 1, 1)
-    >>> sheet['A4'].value
+    >>> sht.range('A4').value = dt.datetime(2000, 1, 1)
+    >>> sht.range('A4').value
     datetime.datetime(2000, 1, 1, 0, 0)
 
 Lists
@@ -40,30 +40,30 @@ Lists
 
   .. code-block:: python
 
-    >>> sheet = xw.Book().sheets[0]
-    >>> sheet['A1'].value = [[1],[2],[3],[4],[5]]  # Column orientation (nested list)
-    >>> sheet['A1:A5'].value
+    >>> sht = xw.Book().sheets[0]
+    >>> sht.range('A1').value = [[1],[2],[3],[4],[5]]  # Column orientation (nested list)
+    >>> sht.range('A1:A5').value
     [1.0, 2.0, 3.0, 4.0, 5.0]
-    >>> sheet['A1'].value = [1, 2, 3, 4, 5]
-    >>> sheet['A1:E1'].value
+    >>> sht.range('A1').value = [1, 2, 3, 4, 5]
+    >>> sht.range('A1:E1').value
     [1.0, 2.0, 3.0, 4.0, 5.0]
 
   To force a single cell to arrive as list, use::
 
-    >>> sheet['A1'].options(ndim=1).value
+    >>> sht.range('A1').options(ndim=1).value
     [1.0]
 
   .. note::
-    To write a list in column orientation to Excel, use ``transpose``: ``sheet.range('A1').options(transpose=True).value = [1,2,3,4]``
+    To write a list in column orientation to Excel, use ``transpose``: ``sht.range('A1').options(transpose=True).value = [1,2,3,4]``
 
 * 2d lists: If the row or column orientation has to be preserved, set ``ndim`` in the Range options. This will return the
   Ranges as nested lists ("2d lists"):
 
   .. code-block:: python
 
-    >>> sheet['A1:A5'].options(ndim=2).value
+    >>> sht.range('A1:A5').options(ndim=2).value
     [[1.0], [2.0], [3.0], [4.0], [5.0]]
-    >>> sheet['A1:E1'].options(ndim=2).value
+    >>> sht.range('A1:E1').options(ndim=2).value
     [[1.0, 2.0, 3.0, 4.0, 5.0]]
 
 
@@ -73,13 +73,13 @@ Lists
 
   .. code-block:: python
 
-    >>> sheet['A10'].value = [['Foo 1', 'Foo 2', 'Foo 3'], [10, 20, 30]]
-    >>> sheet.range((10,1),(11,3)).value
+    >>> sht.range('A10').value = [['Foo 1', 'Foo 2', 'Foo 3'], [10, 20, 30]]
+    >>> sht.range((10,1),(11,3)).value
     [['Foo 1', 'Foo 2', 'Foo 3'], [10.0, 20.0, 30.0]]
 
 
 .. note:: Try to minimize the number of interactions with Excel. It is always more efficient to do
-    ``sheet.range('A1').value = [[1,2],[3,4]]`` than ``sheet.range('A1').value = [1, 2]`` and ``sheet.range('A2').value = [3, 4]``.
+    ``sht.range('A1').value = [[1,2],[3,4]]`` than ``sht.range('A1').value = [1, 2]`` and ``sht.range('A2').value = [3, 4]``.
 
 Range expanding
 ---------------
@@ -90,26 +90,26 @@ accessing the values of a Range. The difference is best explained with an exampl
 
 .. code-block:: python
 
-    >>> sheet = xw.Book().sheets[0]
-    >>> sheet['A1'].value = [[1,2], [3,4]]
-    >>> range1 = sheet['A1'].expand('table')  # or just .expand()
-    >>> range2 = sheet['A1'].options(expand='table')
-    >>> range1.value
+    >>> sht = xw.Book().sheets[0]
+    >>> sht.range('A1').value = [[1,2], [3,4]]
+    >>> rng1 = sht.range('A1').expand('table')  # or just .expand()
+    >>> rng2 = sht.range('A1').options(expand='table')
+    >>> rng1.value
     [[1.0, 2.0], [3.0, 4.0]]
-    >>> range2.value
+    >>> rng2.value
     [[1.0, 2.0], [3.0, 4.0]]
-    >>> sheet['A3'].value = [5, 6]
-    >>> range1.value
+    >>> sht.range('A3').value = [5, 6]
+    >>> rng1.value
     [[1.0, 2.0], [3.0, 4.0]]
-    >>> range2.value
+    >>> rng2.value
     [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]
 
 ``'table'`` expands to ``'down'`` and ``'right'``, the other available options which can be used for column or row only
 expansion, respectively.
 
 .. note:: Using ``expand()`` together with a named Range as top left cell gives you a flexible setup in
-    Excel: You can move around the table and change its size without having to adjust your code, e.g. by using
-    something like ``sheet.range('NamedRange').expand().value``.
+    Excel: You can move around the table and change it's size without having to adjust your code, e.g. by using
+    something like ``sht.range('NamedRange').expand().value``.
 
 NumPy arrays
 ------------
@@ -120,9 +120,9 @@ NumPy arrays work similar to nested lists. However, empty cells are represented 
 .. code-block:: python
 
     >>> import numpy as np
-    >>> sheet = xw.Book().sheets[0]
-    >>> sheet['A1'].value = np.eye(3)
-    >>> sheet['A1'].options(np.array, expand='table').value
+    >>> sht = xw.Book().sheets[0]
+    >>> sht.range('A1').value = np.eye(3)
+    >>> sht.range('A1').options(np.array, expand='table').value
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
@@ -132,20 +132,20 @@ Pandas DataFrames
 
 .. code-block:: python
 
-    >>> sheet = xw.Book().sheets[0]
+    >>> sht = xw.Book().sheets[0]
     >>> df = pd.DataFrame([[1.1, 2.2], [3.3, None]], columns=['one', 'two'])
     >>> df
        one  two
     0  1.1  2.2
     1  3.3  NaN
-    >>> sheet['A1'].value = df
-    >>> sheet['A1:C3'].options(pd.DataFrame).value
+    >>> sht.range('A1').value = df
+    >>> sht.range('A1:C3').options(pd.DataFrame).value
        one  two
     0  1.1  2.2
     1  3.3  NaN
     # options: work for reading and writing
-    >>> sheet['A5'].options(index=False).value = df
-    >>> sheet['A9'].options(index=False, header=False).value = df
+    >>> sht.range('A5').options(index=False).value = df
+    >>> sht.range('A9').options(index=False, header=False).value = df
 
 Pandas Series
 -------------
@@ -154,7 +154,7 @@ Pandas Series
 
     >>> import pandas as pd
     >>> import numpy as np
-    >>> sheet = xw.Book().sheets[0]
+    >>> sht = xw.Book().sheets[0]
     >>> s = pd.Series([1.1, 3.3, 5., np.nan, 6., 8.], name='myseries')
     >>> s
     0    1.1
@@ -164,8 +164,8 @@ Pandas Series
     4    6.0
     5    8.0
     Name: myseries, dtype: float64
-    >>> sheet['A1'].value = s
-    >>> sheet['A1:B7'].options(pd.Series).value
+    >>> sht.range('A1').value = s
+    >>> sht.range('A1:B7').options(pd.Series).value
     0    1.1
     1    3.3
     2    5.0
@@ -175,27 +175,4 @@ Pandas Series
     Name: myseries, dtype: float64
 
 .. note:: You only need to specify the top left cell when writing a list, a NumPy array or a Pandas
-    DataFrame to Excel, e.g.: ``sheet['A1'].value = np.eye(10)``
-
-Chunking: Read/Write big DataFrames etc.
-----------------------------------------
-
-When you read and write from or to big ranges, you may have to chunk them or you will hit a timeout or a memory error. The ideal ``chunksize`` will depend on your system and size of the array, so you will have to try out a few different chunksizes to find one that works well:
-
-.. code-block:: python
-
-    import pandas as pd
-    import numpy as np
-    sheet = xw.Book().sheets[0]
-    data = np.arange(75_000 * 20).reshape(75_000, 20)
-    df = pd.DataFrame(data=data)
-    sheet['A1'].options(chunksize=10_000).value = df
-        
-And the same for reading:
-
-.. code-block:: python
-
-    # As DataFrame
-    df = sheet['A1'].expand().options(pd.DataFrame, chunksize=10_000).value
-    # As list of list
-    df = sheet['A1'].expand().options(chunksize=10_000).value
+    DataFrame to Excel, e.g.: ``sht.range('A1').value = np.eye(10)``

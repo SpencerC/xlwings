@@ -1,17 +1,12 @@
-import datetime
-import math
-from collections import OrderedDict
+# -*- coding: utf-8 -*-
 
-from .. import LicenseError
+from . import Pipeline, Converter, Options, Accessor, accessors
+
+from .. import xlplatform
 from ..main import Range
-from ..utils import chunk, xlserial_to_datetime
-from . import Accessor, Converter, Options, Pipeline, accessors
 
-try:
-    from ..pro import Markdown
-    from ..pro.reports import markdown
-except (ImportError, LicenseError, AttributeError):
-    Markdown = None
+import datetime
+
 try:
     import numpy as np
 except ImportError:
@@ -20,18 +15,18 @@ except ImportError:
 
 _date_handlers = {
     datetime.datetime: datetime.datetime,
-    datetime.date: lambda year, month, day, **kwargs: datetime.date(year, month, day),
+    datetime.date: lambda year, month, day, **kwargs: datetime.date(year, month, day)
 }
 
 _number_handlers = {
     int: lambda x: int(round(x)),
-    "raw int": int,
+    'raw int': int,
 }
 
 
-class ExpandRangeStage:
+class ExpandRangeStage(object):
     def __init__(self, options):
-        self.expand = options.get("expand", None)
+        self.expand = options.get('expand', None)
 
     def __call__(self, c):
         if c.range:
@@ -40,10 +35,30 @@ class ExpandRangeStage:
                 c.range = c.range.expand(self.expand)
 
 
-class WriteValueToRangeStage:
+class ClearExpandedRangeStage(object):
+    def __init__(self, options):
+        self.expand = options.get('expand', None)
+        self.skip = options.get('_skip_tl_cells', None)
+        if self.skip is None:
+            self.skip = (0, 0)
+
+    def __call__(self, ctx):
+        if ctx.range and self.expand:
+            from ..expansion import expanders
+            expander = expanders.get(self.expand, self.expand)
+            vrows = len(ctx.value)
+            vcols = vrows and len(ctx.value[0])
+            expander.clear(
+                ctx.range,
+                skip=self.skip,
+                vshape=(vrows, vcols),
+            )
+
+
+class WriteValueToRangeStage(object):
     def __init__(self, options, raw=False):
+        self.skip = options.get('_skip_tl_cells', None)
         self.raw = raw
-        self.options = options
 
     def _write_value(self, rng, value, scalar):
         if rng.api and value:
@@ -53,89 +68,68 @@ class WriteValueToRangeStage:
             else:
                 rng = rng.resize(len(value), len(value[0]))
 
-            chunksize = self.options.get("chunksize")
-            if chunksize:
-                for ix, value_chunk in enumerate(chunk(value, chunksize)):
-                    rng[
-                        ix * chunksize : ix * chunksize + chunksize, :
-                    ].raw_value = value_chunk
-            else:
-                rng.raw_value = value
+            rng.raw_value = value
 
     def __call__(self, ctx):
-        # HF Commit 4 - Spencer Patch - omitted b/c breaks test_range.test_jagged_array
-        # if ctx.range is not None and ctx.value is not None:
-        if ctx.range and ctx.value:
+        if ctx.range is not None and ctx.value is not None:
             if self.raw:
                 ctx.range.raw_value = ctx.value
                 return
 
-            scalar = ctx.meta.get("scalar", False)
+            scalar = ctx.meta.get('scalar', False)
             if not scalar:
                 ctx.range = ctx.range.resize(len(ctx.value), len(ctx.value[0]))
+            if self.skip:
+                r, c = self.skip
+                if scalar:
+                    self._write_value(ctx.range[:r, c:], ctx.value, True)
+                    self._write_value(ctx.range[r:, :], ctx.value, True)
+                else:
+                    self._write_value(ctx.range[:r, c:], [x[c:] for x in ctx.value[:r]], False)
+                    self._write_value(ctx.range[r:, :], ctx.value[r:], False)
+            else:
+                self._write_value(ctx.range, ctx.value, scalar)
 
-            self._write_value(ctx.range, ctx.value, scalar)
 
-
-class ReadValueFromRangeStage:
-    def __init__(self, options):
-        self.options = options
+class ReadValueFromRangeStage(object):
 
     def __call__(self, c):
-        chunksize = self.options.get("chunksize")
-        if c.range and chunksize:
-            parts = []
-            for i in range(math.ceil(c.range.shape[0] / chunksize)):
-                raw_value = c.range[
-                    i * chunksize : (i * chunksize) + chunksize, :
-                ].raw_value
-                if isinstance(raw_value[0], (list, tuple)):
-                    parts.extend(raw_value)
-                else:
-                    # Turn a single row list into a 2d list
-                    parts.extend([raw_value])
-
-            c.value = parts
-        elif c.range:
+        if c.range:
             c.value = c.range.raw_value
 
 
-class CleanDataFromReadStage:
+class CleanDataFromReadStage(object):
+
     def __init__(self, options):
-        self.options = options
-        dates_as = options.get("dates", datetime.datetime)
-        self.empty_as = options.get("empty", None)
+        dates_as = options.get('dates', datetime.datetime)
+        self.empty_as = options.get('empty', None)
         self.dates_handler = _date_handlers.get(dates_as, dates_as)
-        numbers_as = options.get("numbers", None)
+        numbers_as = options.get('numbers', None)
         self.numbers_handler = _number_handlers.get(numbers_as, numbers_as)
-        self.err_to_str = options.get("err_to_str", False)
 
     def __call__(self, c):
-        c.value = c.engine.impl.clean_value_data(
-            c.value,
-            self.dates_handler,
-            self.empty_as,
-            self.numbers_handler,
-            self.err_to_str,
-        )
+        c.value = xlplatform.clean_value_data(c.value, self.dates_handler, self.empty_as, self.numbers_handler)
 
 
-class CleanDataForWriteStage:
-    def __init__(self, options):
-        self.options = options
+class CleanDataForWriteStage(object):
 
     def __call__(self, c):
         c.value = [
-            [c.engine.impl.prepare_xl_data_element(x, self.options) for x in y]
+            [
+                xlplatform.prepare_xl_data_element(x)
+                for x in y
+            ]
             for y in c.value
         ]
 
 
-class AdjustDimensionsStage:
+class AdjustDimensionsStage(object):
+
     def __init__(self, options):
-        self.ndim = options.get("ndim", None)
+        self.ndim = options.get('ndim', None)
 
     def __call__(self, c):
+
         # the assumption is that value is 2-dimensional at this stage
 
         if self.ndim is None:
@@ -156,87 +150,83 @@ class AdjustDimensionsStage:
 
         # ndim = 2 is a no-op
         elif self.ndim != 2:
-            raise ValueError("Invalid c.value ndim=%s" % self.ndim)
+            raise ValueError('Invalid c.value ndim=%s' % self.ndim)
 
 
-class Ensure2DStage:
+class Ensure2DStage(object):
+
     def __call__(self, c):
         if isinstance(c.value, (list, tuple)):
             if len(c.value) > 0:
                 if not isinstance(c.value[0], (list, tuple)):
                     c.value = [c.value]
         else:
-            c.meta["scalar"] = True
+            c.meta['scalar'] = True
             c.value = [[c.value]]
 
 
-class TransposeStage:
+class TransposeStage(object):
+
     def __call__(self, c):
-        c.value = [
-            [e[i] for e in c.value] for i in range(len(c.value[0]) if c.value else 0)
-        ]
-
-
-class FormatStage:
-    def __init__(self, options):
-        self.options = options
-
-    def __call__(self, ctx):
-        if Markdown and isinstance(ctx.source_value, Markdown):
-            markdown.format_text(
-                ctx.range, ctx.source_value.text, ctx.source_value.style
-            )
-        if "formatter" in self.options:
-            self.options["formatter"](ctx.range, ctx.source_value)
+        c.value = [[e[i] for e in c.value] for i in range(len(c.value[0]) if c.value else 0)]
 
 
 class BaseAccessor(Accessor):
+
     @classmethod
     def reader(cls, options):
-        return Pipeline().append_stage(
-            ExpandRangeStage(options), only_if=options.get("expand", None)
+        return (
+            Pipeline()
+            .append_stage(ExpandRangeStage(options), only_if=options.get('expand', None))
         )
 
 
 class RangeAccessor(Accessor):
+
     @staticmethod
     def copy_range_to_value(c):
         c.value = c.range
 
     @classmethod
     def reader(cls, options):
-        return BaseAccessor.reader(options).append_stage(
-            RangeAccessor.copy_range_to_value
+        return (
+            BaseAccessor.reader(options)
+            .append_stage(RangeAccessor.copy_range_to_value)
         )
 
 
-RangeAccessor.register("range", Range)
+RangeAccessor.register(Range)
 
 
 class RawValueAccessor(Accessor):
+
     @classmethod
     def reader(cls, options):
-        return Accessor.reader(options).append_stage(ReadValueFromRangeStage(options))
+        return (
+            Accessor.reader(options)
+            .append_stage(ReadValueFromRangeStage())
+        )
 
     @classmethod
     def writer(cls, options):
-        return Accessor.writer(options).prepend_stage(
-            WriteValueToRangeStage(options, raw=True)
+        return (
+            Accessor.writer(options)
+            .prepend_stage(WriteValueToRangeStage(options, raw=True))
         )
 
-
-RawValueAccessor.register("raw")
+RawValueAccessor.register('raw')
 
 
 class ValueAccessor(Accessor):
+
     @staticmethod
     def reader(options):
         return (
             BaseAccessor.reader(options)
-            .append_stage(ReadValueFromRangeStage(options))
+            .append_stage(ReadValueFromRangeStage())
             .append_stage(Ensure2DStage())
             .append_stage(CleanDataFromReadStage(options))
-            .append_stage(TransposeStage(), only_if=options.get("transpose", False))
+            .append_stage(TransposeStage(), only_if=options.get('transpose', False))
             .append_stage(AdjustDimensionsStage(options))
         )
 
@@ -244,10 +234,10 @@ class ValueAccessor(Accessor):
     def writer(options):
         return (
             Pipeline()
-            .prepend_stage(FormatStage(options))
             .prepend_stage(WriteValueToRangeStage(options))
-            .prepend_stage(CleanDataForWriteStage(options))
-            .prepend_stage(TransposeStage(), only_if=options.get("transpose", False))
+            .prepend_stage(ClearExpandedRangeStage(options), only_if=options.get('expand', None))
+            .prepend_stage(CleanDataForWriteStage())
+            .prepend_stage(TransposeStage(), only_if=options.get('transpose', False))
             .prepend_stage(Ensure2DStage())
         )
 
@@ -260,9 +250,17 @@ ValueAccessor.register(None)
 
 
 class DictConverter(Converter):
+
+    writes_types = dict
+
     @classmethod
     def base_reader(cls, options):
-        return super(DictConverter, cls).base_reader(Options(options).override(ndim=2))
+        return (
+            super(DictConverter, cls).base_reader(
+                Options(options)
+                .override(ndim=2)
+            )
+        )
 
     @classmethod
     def read_value(cls, value, options):
@@ -275,49 +273,3 @@ class DictConverter(Converter):
 
 
 DictConverter.register(dict)
-
-
-class OrderedDictConverter(Converter):
-    @classmethod
-    def base_reader(cls, options):
-        return super(OrderedDictConverter, cls).base_reader(
-            Options(options).override(ndim=2)
-        )
-
-    @classmethod
-    def read_value(cls, value, options):
-        assert not value or len(value[0]) == 2
-        return OrderedDict(value)
-
-    @classmethod
-    def write_value(cls, value, options):
-        return list(value.items())
-
-
-OrderedDictConverter.register(OrderedDict)
-
-
-class DatetimeConverter(Converter):
-    @classmethod
-    def read_value(cls, value, options):
-        return xlserial_to_datetime(value)
-
-    @classmethod
-    def write_value(cls, value, options):
-        return value
-
-
-DatetimeConverter.register(datetime.datetime)
-
-
-class DateConverter(Converter):
-    @classmethod
-    def read_value(cls, value, options):
-        return xlserial_to_datetime(value).date()
-
-    @classmethod
-    def write_value(cls, value, options):
-        return value
-
-
-DateConverter.register(datetime.date)

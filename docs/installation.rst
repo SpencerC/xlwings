@@ -1,31 +1,9 @@
+.. _installation:
+
 Installation
 ============
 
-Prerequisites
--------------
-
-* xlwings (Open Source) requires an **installation of Excel** and therefore only works on **Windows** and **macOS**. Note that macOS currently does not support UDFs.
-* xlwings PRO offers additional features:
-    * :ref:`File Reader <file_reader>` (new in v0.28.0): Runs additionally on Linux and doesn't require an installation of Excel.
-    * :ref:`xlwings Server <remote_interpreter>` (new in v0.26.0). Runs additionally on Linux and doesn't require a local installation of Python. Works with Desktop Excel on Windows and macOS as well as with Excel on the web and Google Sheets.
-* xlwings requires at least Python 3.8.
-
-Here are previous versions of xlwings that support older versions of Python:
-
-* Python 3.7: 0.30.9
-* Python 3.6: 0.25.3
-* Python 3.5: 0.19.5
-* Python 2.7: 0.16.6
-
-xlwings Python package
-----------------------
-
-xlwings comes pre-installed with
-
-* `Anaconda <https://www.anaconda.com/products/individual>`_ (Windows and macOS)
-* `WinPython <https://winpython.github.io>`_ (Windows only) Make sure **not** to take the ``dot`` version as this only contains Python.
-
-If you are new to Python or have trouble installing xlwings, one of these distributions is highly recommended. Otherwise, you can also install it with pip::
+The easiest way to install xlwings is via pip::
 
     pip install xlwings
 
@@ -33,84 +11,54 @@ or conda::
 
     conda install xlwings
 
-Note that the official conda package might be a few releases behind. You can, however,
-use the ``conda-forge`` channel (replace ``install`` with ``upgrade`` if xlwings is already installed)::
+Note that the official ``conda`` package might be few releases behind. You can, however, 
+use the ``conda-forge`` channel (see: https://anaconda.org/conda-forge/xlwings) which should be reasonably up to date (but might still be a few days behind the pip release)::
 
   conda install -c conda-forge xlwings
 
-xlwings Excel Add-in
---------------------
 
-To install the add-in, run the following command::
+Alternatively, it can be installed from source. From within the ``xlwings`` directory, execute::
 
-    xlwings addin install
-
-To automate Excel from Python, you don't need an add-in. Also, you can use a single file VBA module (*standalone workbook*) instead of the add-in. For more details, see :ref:`xlwings_addin`.
+    python setup.py install
 
 .. note::
-   The add-in needs to be the same version as the Python package. Make sure to run ``xlwings add install`` again after upgrading the xlwings package.
-
-.. note::
-  When you are on macOS and are using the VBA standalone module instead of the add-in, you need to run ``$ xlwings runpython install`` once.
+  When you are using Mac Excel 2016 and are installing xlwings with ``conda`` (or use the version that comes with Anaconda),
+  you'll need to run ``$ xlwings runpython install`` once to enable the ``RunPython`` calls from VBA. Alternatively, you can simply
+  install xlwings with ``pip``.
 
 Dependencies
 ------------
 
-For automating Excel, you'll need the following dependencies:
+* **Windows**: ``pywin32``, ``comtypes``
 
-* **Windows**: ``pywin32``
+  On Windows, it is recommended to use one of the scientific Python distributions like
+  `Anaconda <https://store.continuum.io/cshop/anaconda/>`_,
+  `WinPython <https://winpython.github.io/>`_ or
+  `Canopy <https://www.enthought.com/products/canopy/>`_ as they already include pywin32. Otherwise it needs to be
+  installed from `here <http://sourceforge.net/projects/pywin32/files/pywin32/>`_ which can be a hassle.
 
 * **Mac**: ``psutil``, ``appscript``
 
-The dependencies are automatically installed via ``conda`` or ``pip``.
-If you would like to install xlwings without dependencies, you can run ``pip install xlwings --no-deps``.
-
-How to activate xlwings PRO
----------------------------
-
-See :ref:`xlwings PRO <pro>`.
+  On Mac, the dependencies are automatically being handled if xlwings is installed with ``conda`` or ``pip``. However,
+  with pip, the Xcode command line tools need to be available. Mac OS X 10.4 (*Tiger*) or later is required.
+  The recommended Python distribution for Mac is `Anaconda <https://store.continuum.io/cshop/anaconda/>`_.
 
 Optional Dependencies
 ---------------------
 
 * NumPy
-* pandas
+* Pandas
 * Matplotlib
-* Pillow
-* Jinja2 (for xlwings.reports)
+* Pillow/PIL
 
-These packages are not required but highly recommended as they play very nicely with xlwings. They are all pre-installed with Anaconda. With pip, you can install xlwings with all optional dependencies as follows::
+These packages are not required but highly recommended as they play very nicely with xlwings.
 
-    pip install "xlwings[all]"
-
-Update
+Add-in
 ------
 
-To update to the latest xlwings version, run the following in a command prompt::
+Please see :ref:`xlwings_addin` on how to install the xlwings add-in.
 
-    pip install --upgrade xlwings
+Python version support
+----------------------
 
-or::
-
-    conda update -c conda-forge xlwings
-
-Make sure to keep your version of the Excel add-in in sync with your Python package by running the following (make sure to close Excel first)::
-
-    xlwings addin install
-
-Uninstall
----------
-
-To uninstall xlwings completely, first uninstall the add-in, then uninstall the xlwings package using the same method (pip or conda) that you used for installing it::
-
-    xlwings addin remove
-
-Then ::
-
-    pip uninstall xlwings
-
-or::
-
-    conda remove xlwings
-
-Finally, manually remove the ``.xlwings`` directory in your home folder if it exists.
+xlwings is tested on Python 2.7 and 3.3+

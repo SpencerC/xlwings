@@ -1,3 +1,5 @@
+.. _extensions:
+
 Extensions
 ==========
 
@@ -16,6 +18,8 @@ The xlwings addin comes with a built-in extension that adds in-Excel SQL syntax 
 
     =sql(SQL Statement, table a, table b, ...)
 
-.. figure:: ./images/sql.png
+.. figure:: images/sql.png
+    :scale: 40%
+
 
 As this extension uses UDFs, it's only available on Windows right now.
