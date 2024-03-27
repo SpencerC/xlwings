@@ -1,1 +1,5 @@
-sphinxcontrib-napoleon
+furo
+sphinx-copybutton
+sphinx-design
+sphinx
+sphinxcontrib-httpdomain

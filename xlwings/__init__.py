@@ -1,83 +1,194 @@
-from __future__ import absolute_import
+import os
 import sys
+from functools import wraps
 
+__version__ = "dev"
 
-__version__ = 'dev'
-
-# Python 2 vs 3
-PY3 = sys.version_info[0] == 3
-
+# HF Spencer Patch - 2 properties below
 enable_caching = True
 cache_timeout = 5
 
-if PY3:
-    string_types = str
-    xrange = range
-    from builtins import map
-    import builtins
-else:
-    string_types = basestring
-    xrange = xrange
-    from future_builtins import map
-    builtins = __builtins__
-
 # Platform specifics
-if sys.platform.startswith('win'):
-    from . import _xlwindows as xlplatform
+if sys.platform.startswith("darwin"):
+    USER_CONFIG_FILE = os.path.join(
+        os.path.expanduser("~"),
+        "Library",
+        "Containers",
+        "com.microsoft.Excel",
+        "Data",
+        "xlwings.conf",
+    )
 else:
-    from . import _xlmac as xlplatform
+    USER_CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".xlwings", "xlwings.conf")
 
-time_types = xlplatform.time_types
 
 # Errors
-class ShapeAlreadyExists(Exception):
+class XlwingsError(Exception):
     pass
 
+
+class LicenseError(XlwingsError):
+    pass
+
+
+class ShapeAlreadyExists(XlwingsError):
+    pass
+
+
+class NoSuchObjectError(XlwingsError):
+    pass
+
+
 # API
-from .main import App, Book, Range, Chart, Sheet, Picture, Shape, Name, view, RangeRows, RangeColumns
-from .main import apps, books, sheets
+from .main import (
+    App,
+    Book,
+    Chart,
+    Engine,
+    Name,
+    Picture,
+    Range,
+    RangeColumns,
+    RangeRows,
+    Shape,
+    Sheet,
+    apps,
+    books,
+    engines,
+    load,
+    sheets,
+    view,
+)
+from .utils import xlserial_to_datetime as to_datetime
+
+__all__ = (
+    "App",
+    "Book",
+    "Chart",
+    "Engine",
+    "Name",
+    "Picture",
+    "Range",
+    "RangeColumns",
+    "RangeRows",
+    "Shape",
+    "Sheet",
+    "apps",
+    "books",
+    "engines",
+    "load",
+    "sheets",
+    "view",
+    "to_datetime",
+)
+
+# Populate engines list
+has_pywin32 = False
+if sys.platform.startswith("win"):
+    try:
+        from . import _xlwindows
+
+        engines.add(Engine(impl=_xlwindows.engine))
+        has_pywin32 = True
+    except ImportError:
+        pass
+if sys.platform.startswith("darwin"):
+    try:
+        from . import _xlmac
+
+        engines.add(Engine(impl=_xlmac.engine))
+    except ImportError:
+        pass
+
+try:
+    from .pro import _xlofficejs, _xlremote
+
+    engines.add(Engine(impl=_xlremote.engine))
+    engines.add(Engine(impl=_xlofficejs.engine))
+    __pro__ = True
+except (ImportError, LicenseError, AttributeError):
+    __pro__ = False
+
+try:
+    # Separately handled in case the Rust extension is missing
+    from .pro import _xlcalamine
+
+    engines.add(Engine(impl=_xlcalamine.engine))
+except (ImportError, LicenseError, AttributeError):
+    pass
+
+if "excel" in [engine.name for engine in engines]:
+    # An active engine only really makes sense for the interactive mode with a desktop
+    # installation of Excel. Still, you could activate an engine explicitly via
+    # xw.engines["engine_name"].activate() which might be useful for testing purposes.
+    engines.active = engines["excel"]
 
 # UDFs
-if sys.platform.startswith('win'):
-    from .udfs import xlfunc as func, xlsub as sub, xlret as ret, xlarg as arg, get_udf_module, import_udfs
-else:
-    def func(*args, **kwargs):
-        def real_decorator(f):
-            return f
-        return real_decorator
+if sys.platform.startswith("win") and has_pywin32:
+    from .com_server import serve
+    from .udfs import (
+        get_udf_module,
+        import_udfs,
+        xlarg as arg,
+        xlfunc as func,
+        xlret as ret,
+        xlsub as sub,
+    )
 
-    def sub(*args, **kwargs):
-        def real_decorator(f):
+    # This generates the modules for early-binding under %TEMP%\gen_py\3.x
+    # generated via makepy.py -i, but using an old minor=2, as it still seems to
+    # generate the most recent version of it whereas it would fail if the minor is
+    # higher than what exists on the machine. Allowing it to fail silently, as this is
+    # only a hard requirement for ComRange in udf.py which is only used for async funcs,
+    # legacy dynamic arrays, and the 'caller' argument.
+    try:
+        from win32com.client import gencache
+
+        gencache.EnsureModule(
+            "{00020813-0000-0000-C000-000000000046}", lcid=0, major=1, minor=2
+        )
+    except:  # noqa: E722
+        pass
+else:
+
+    def func(f=None, *args, **kwargs):
+        @wraps(f)
+        def inner(f):
             return f
-        return real_decorator
+
+        if f is None:
+            return inner
+        else:
+            return inner(f)
+
+    def sub(f=None, *args, **kwargs):
+        @wraps(f)
+        def inner(f):
+            return f
+
+        if f is None:
+            return inner
+        else:
+            return inner(f)
 
     def ret(*args, **kwargs):
-        def real_decorator(f):
+        def inner(f):
             return f
-        return real_decorator
+
+        return inner
 
     def arg(*args, **kwargs):
-        def real_decorator(f):
+        def inner(f):
             return f
-        return real_decorator
 
+        return inner
 
-def xlfunc(*args, **kwargs):
-    raise Exception("Deprecation: 'xlfunc' has been renamed to 'func' - use 'import xlwings as xw' and decorate your function with '@xw.func'.")
+    def raise_missing_pywin32():
+        raise ImportError(
+            "Couldn't find 'pywin32'. Install it via"
+            "'pip install pywin32' or 'conda install pywin32'."
+        )
 
-
-def xlsub(*args, **kwargs):
-    raise Exception("Deprecation: 'xlsub' has been renamed to 'sub' - use 'import xlwings as xw' and decorate your function with '@xw.sub'.")
-
-
-def xlret(*args, **kwargs):
-    raise Exception("Deprecation: 'xlret' has been renamed to 'ret' - use 'import xlwings as xw' and decorate your function with '@xw.ret'.")
-
-
-def xlarg(*args, **kwargs):
-    raise Exception("Deprecation: 'xlarg' has been renamed to 'arg' - use 'import xlwings as xw' and decorate your function with '@xw.arg'.")
-
-
-# Server
-if sys.platform.startswith('win'):
-    from .server import serve
+    serve = raise_missing_pywin32
+    get_udf_module = raise_missing_pywin32
+    import_udfs = raise_missing_pywin32
